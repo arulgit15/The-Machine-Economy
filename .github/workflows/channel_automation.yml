@@ -2,10 +2,10 @@ name: Autonomous Channel Pipeline
 
 on:
   schedule:
-    # YouTube Shorts: Tuesday, Thursday, Saturday at 14:00 UTC
-    - cron: '0 14 * * 2,4,6'
-    # Long-form Documentary: Sunday at 16:00 UTC
-    - cron: '0 16 * * 0'
+    # Daily YouTube Shorts: Every day at 14:00 UTC (7:30 PM IST / 9:00 AM EST)
+    - cron: '0 14 * * *'
+    # Long-Form Investigations: Tuesday, Thursday, Sunday at 16:00 UTC (9:30 PM IST / 11:00 AM EST)
+    - cron: '0 16 * * 0,2,4'
   workflow_dispatch:
     inputs:
       video_type:
@@ -17,7 +17,7 @@ on:
           - short
           - long
       topic:
-        description: 'Custom topic (leave blank for algorithmic auto-selection)'
+        description: 'Custom topic (leave blank for thematic auto-calendar)'
         required: false
         default: ''
       live_mode:
@@ -69,19 +69,31 @@ jobs:
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
           YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
         run: |
-          VIDEO_TYPE="${{ github.event.inputs.video_type || 'short' }}"
-          TOPIC="${{ github.event.inputs.topic || '' }}"
-          PRIVACY="${{ github.event.inputs.privacy_status || 'private' }}"
-          
-          CMD="python pipeline.py --type $VIDEO_TYPE --privacy $PRIVACY"
-          
-          if [ -n "$TOPIC" ]; then
-            CMD="$CMD --topic \"$TOPIC\""
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            # Automated Cron Execution
+            if [ "${{ github.event.schedule }}" = "0 16 * * 0,2,4" ]; then
+              VIDEO_TYPE="long"
+            else
+              VIDEO_TYPE="short"
+            fi
+            PRIVACY="private"
+            CMD="python pipeline.py --type $VIDEO_TYPE --live --privacy $PRIVACY"
+          else
+            # Manual Workflow Dispatch Execution
+            VIDEO_TYPE="${{ github.event.inputs.video_type || 'short' }}"
+            TOPIC="${{ github.event.inputs.topic || '' }}"
+            PRIVACY="${{ github.event.inputs.privacy_status || 'private' }}"
+            CMD="python pipeline.py --type $VIDEO_TYPE --privacy $PRIVACY"
+            if [ -n "$TOPIC" ]; then
+              CMD="$CMD --topic \"$TOPIC\""
+            fi
+            if [ "${{ github.event.inputs.live_mode }}" = "true" ]; then
+              CMD="$CMD --live"
+            fi
           fi
-          
-          if [ "${{ github.event.inputs.live_mode }}" = "true" ]; then
-            CMD="$CMD --live"
-          fi
+
+          echo "Executing: $CMD"
+          eval $CMD
           
           echo "Executing: $CMD"
           eval $CMD

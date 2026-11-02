@@ -77,3 +77,4 @@ def get_latest_investigative_topic() -> dict:
         "published": "Recent",
         "category": "Machine Economy"
     }
+

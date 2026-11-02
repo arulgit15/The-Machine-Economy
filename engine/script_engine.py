@@ -7,32 +7,55 @@ hook-driven storytelling, visual asset cues, and YouTube algorithm metadata.
 import json
 import os
 import re
+from datetime import datetime
 from config.settings import GEMINI_API_KEY, NICHE, CHANNEL_NAME
 from engine.trend_engine import get_latest_investigative_topic, fetch_breaking_tech_trends
 
-# High-retention topic pillars for "The Machine Economy & Speculative Tech"
-TOPIC_PILLARS = [
-    {
-        "topic": "The $40 Trillion Autonomous Agent Swarm Economy",
-        "keywords": ["AI agents", "autonomous corporations", "future of work", "machine economy", "2027 tech"],
-        "angle": "How autonomous software agents are forming decentralized micro-companies that operate 24/7 without human employees."
+# Thematic 7-Day Content Calendar (Algorithmic Clustering & Authority)
+WEEKLY_THEMATIC_ROSTER = {
+    0: {  # Monday
+        "day": "Monday",
+        "theme": "Autonomous Software & Multi-Agent Stacks",
+        "focus": "AI agent architectures, automated engineering, solo-developer multi-million dollar stacks",
+        "prompt_context": "Deep dive into real-world agent orchestration frameworks, autonomous code generation, and the engineering behind 1-person software companies."
     },
-    {
-        "topic": "Humanoid Labor: The Real Economics of the $20,000 Robot Worker",
-        "keywords": ["humanoid robots", "Tesla Optimus", "Figure 02", "manufacturing future", "robotics economics"],
-        "angle": "Why the marginal cost of physical labor is collapsing to near zero, and which industries will be transformed first."
+    1: {  # Tuesday
+        "day": "Tuesday",
+        "theme": "Humanoid Robotics & Factory Economics",
+        "focus": "Tesla Optimus, Figure 02, Boston Dynamics, physical labor cost collapse, manufacturing automation",
+        "prompt_context": "Examine the marginal cost of physical labor falling to $2/hour and the restructuring of warehouse, logistics, and assembly lines."
     },
-    {
-        "topic": "Post-AGI Sovereign Wealth: How Nations Will Survive the Machine Age",
-        "keywords": ["AGI economics", "sovereign AI", "compute currency", "universal basic compute", "future wealth"],
-        "angle": "The emergence of compute as the global reserve asset and the restructuring of national economic systems."
+    2: {  # Wednesday
+        "day": "Wednesday",
+        "theme": "Machine-to-Machine Finance & Sovereign Crypto Rails",
+        "focus": "AI agents with bank accounts, crypto rails for autonomous transactions, decentralized compute payments",
+        "prompt_context": "Investigate how autonomous software agents are bypassing traditional SWIFT/ACH banking using cryptographic micro-transactions to buy compute and data."
     },
-    {
-        "topic": "Quantum Encryption Collapse: The Secret Race for Post-Quantum Assets",
-        "keywords": ["quantum computing", "cybersecurity", "financial infrastructure", "cryptography", "quantum economy"],
-        "angle": "What happens to the global financial system when quantum computers can break RSA encryption, and the silent migration underway."
+    3: {  # Thursday
+        "day": "Thursday",
+        "theme": "Sovereign Compute & Energy Megaprojects",
+        "focus": "National GPU stockpiles, nuclear datacenter energy, next-gen silicon, geopolitics of AGI",
+        "prompt_context": "Explore why world powers are treating gigawatt nuclear power and specialized compute clusters as the 21st-century equivalent of oil reserves."
+    },
+    4: {  # Friday
+        "day": "Friday",
+        "theme": "The Post-Labor Solopreneur & Micro-SaaS",
+        "focus": "Solo-operated autonomous micro-businesses, agentic lead-gen, automated revenue machines",
+        "prompt_context": "Break down concrete, step-by-step case studies of individual operators using coordinated AI agent swarms to generate 6- and 7-figure cash flows."
+    },
+    5: {  # Saturday
+        "day": "Saturday",
+        "theme": "Speculative Science & Quantum Breakthroughs",
+        "focus": "Quantum cryptography collapse, fusion energy, synthetic biology, technological singularity timelines",
+        "prompt_context": "Analyze high-impact speculative engineering breakthroughs planned between 2027 and 2035 that will shatter existing economic assumptions."
+    },
+    6: {  # Sunday
+        "day": "Sunday",
+        "theme": "The Master Civilizational Documentary",
+        "focus": "The decoupling of human labor from economic productivity, macroeconomic collapse, post-work society",
+        "prompt_context": "A master investigative documentary examining the mathematical and economic architecture of the post-human economy."
     }
-]
+}
 
 SYSTEM_PROMPT = f"""
 You are the Executive Content Director, Lead Algorithmic Scriptwriter, and YouTube Growth Strategist for "{CHANNEL_NAME}".
@@ -41,12 +64,14 @@ Your niche is: {NICHE}.
 Your videos target sophisticated viewers: tech founders, engineers, investors, and futurists.
 CPM target is $25-$45.
 
-CRITICAL RETENTION RULES (YouTube Algorithm 2026/2027):
-1. THE 0:00-0:05 PARADOX HOOK: Never start with "Hey guys", "Welcome back", or questions like "Have you ever wondered". Jump straight into an undeniable contradiction, shocking empirical data, or high-stakes future paradigm shift.
-2. PACING: Write short, punchy sentences. High cadence. Every 15-20 seconds must introduce a new development or structural revelation.
-3. THE INFINITE LOOP (MANDATORY FOR SHORTS): The final spoken sentence MUST grammatically and semantically bridge seamlessly back into the opening hook sentence! (For example, End sentence: "...and that is the exact mathematical reason why..." which bridges directly when the video loops back to the First sentence: "Right now, autonomous AI agents are..."). This achieves >100% Average Percentage Viewed (APV)!
-4. VISUAL CUES: Embed 6 to 10 distinct scenes with explicit visual_query strings for stock footage and stat_overlay triggers.
-5. METADATA: 
+CRITICAL RETENTION & QUALITY RULES (Human Value Guarantee):
+1. ZERO ABSTRACT DEFINITIONS: Never state "AI agents are software programs that perform tasks." Always frame around specific empirical case studies, real dollar figures, and operational code architectures.
+2. EMPIRICAL BENCHMARKS: Reference real benchmarks, GitHub architectures, server costs ($/hour), and market data.
+3. THE 0:00-0:05 PARADOX HOOK: Never start with "Hey guys", "Welcome back", or questions like "Have you ever wondered". Jump straight into an undeniable contradiction, shocking empirical data, or high-stakes future paradigm shift.
+4. THE INFINITE LOOP (MANDATORY FOR SHORTS): The final spoken sentence MUST grammatically and semantically bridge seamlessly back into the opening hook sentence! (For example, End sentence: "...and that is the exact mathematical reason why..." which bridges directly when the video loops back to the First sentence: "Right now, autonomous AI agents are..."). This achieves >100% Average Percentage Viewed (APV)!
+5. THE UNFAIR ADVANTAGE: Every video must give the human viewer an actionable insight: what this means for their wealth, career, or technical stack.
+6. VISUAL CUES: Embed 6 to 10 distinct scenes with explicit visual_query strings for stock footage and stat_overlay triggers.
+7. METADATA: 
    - Title must be under 50 characters, curiosity-gap driven, high emotional tension, mobile optimized.
    - Description must contain chapter timestamps, semantic summary, and keyword clusters for browse features.
 
@@ -93,11 +118,20 @@ def generate_video_package(video_type: str = "short", specific_topic: str = None
     """Generates a complete script and production package using Gemini or offline fallback."""
     api_key = os.getenv("GEMINI_API_KEY", GEMINI_API_KEY)
     
-    # If no specific topic given, dynamically fetch breaking real-time news
+    # Auto-detect day of week from 7-day thematic roster
+    today_idx = datetime.now().weekday()
+    day_meta = WEEKLY_THEMATIC_ROSTER[today_idx]
+
+    # If no specific topic given, dynamically combine thematic pillar + breaking news
     if not specific_topic:
         breaking = get_latest_investigative_topic()
-        specific_topic = f"Breaking Investigation: {breaking['title']} (Context: {breaking.get('category', 'AI Economy')})"
-        print(f"[ScriptEngine] Live Trend Detected: {specific_topic}")
+        specific_topic = (
+            f"[{day_meta['day']} Theme: {day_meta['theme']}] "
+            f"Breaking Angle: {breaking['title']} "
+            f"// Analytical Focus: {day_meta['prompt_context']}"
+        )
+        print(f"[ScriptEngine] Active Day: {day_meta['day']} ({day_meta['theme']})")
+        print(f"[ScriptEngine] Live Trend Angle: {breaking['title']}")
     
     if api_key:
         try:
