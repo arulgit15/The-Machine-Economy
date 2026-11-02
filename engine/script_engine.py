@@ -8,6 +8,7 @@ import json
 import os
 import re
 from config.settings import GEMINI_API_KEY, NICHE, CHANNEL_NAME
+from engine.trend_engine import get_latest_investigative_topic, fetch_breaking_tech_trends
 
 # High-retention topic pillars for "The Machine Economy & Speculative Tech"
 TOPIC_PILLARS = [
@@ -43,8 +44,9 @@ CPM target is $25-$45.
 CRITICAL RETENTION RULES (YouTube Algorithm 2026/2027):
 1. THE 0:00-0:05 PARADOX HOOK: Never start with "Hey guys", "Welcome back", or questions like "Have you ever wondered". Jump straight into an undeniable contradiction, shocking empirical data, or high-stakes future paradigm shift.
 2. PACING: Write short, punchy sentences. High cadence. Every 15-20 seconds must introduce a new development or structural revelation.
-3. VISUAL CUES: Embed explicit [SCENE: <keyword query>] and [STAT: <label> | <value>] and [SFX: whoosh/click] markers so the video compositor can inject dynamic assets.
-4. METADATA: 
+3. THE INFINITE LOOP (MANDATORY FOR SHORTS): The final spoken sentence MUST grammatically and semantically bridge seamlessly back into the opening hook sentence! (For example, End sentence: "...and that is the exact mathematical reason why..." which bridges directly when the video loops back to the First sentence: "Right now, autonomous AI agents are..."). This achieves >100% Average Percentage Viewed (APV)!
+4. VISUAL CUES: Embed 6 to 10 distinct scenes with explicit visual_query strings for stock footage and stat_overlay triggers.
+5. METADATA: 
    - Title must be under 50 characters, curiosity-gap driven, high emotional tension, mobile optimized.
    - Description must contain chapter timestamps, semantic summary, and keyword clusters for browse features.
 
@@ -57,20 +59,20 @@ def generate_script_prompt(video_type: str = "short", specific_topic: str = None
     prompt = f"""
 Create a complete high-retention video production package for video type: "{video_type.upper()}".
 Target spoken length: {target_words}.
-Specific Topic/Idea: {specific_topic or "Choose the most urgent, high-CPM topic from the Machine Economy pillar."}
+Specific Topic/Breaking Event: {specific_topic or "Choose the freshest high-stakes breaking development from the Machine Economy."}
 
 Return a valid JSON object matching this exact schema:
 {{
   "title": "High CTR mobile title (<50 chars)",
-  "hook": "First 5 seconds spoken script",
-  "script_clean": "Complete full spoken narrative text without any cue brackets (clean text for TTS)",
+  "hook": "First 5 seconds spoken script (Paradox/Tension)",
+  "script_clean": "Complete full spoken narrative text without any cue brackets. If short, ending bridges seamlessly into hook for infinite loop.",
   "scenes": [
     {{
       "text_segment": "Spoken sentence corresponding to this scene",
-      "visual_query": "High quality Pexels stock video search query (e.g., 'futuristic server room dark blue' or 'humanoid robot factory')",
+      "visual_query": "High quality stock video search query (e.g., 'supercomputer datacenter neon' or 'humanoid robot hands')",
       "stat_overlay": {{
         "show": true,
-        "title": "Short stat title e.g. MARKET CAP SHIFT",
+        "title": "Short stat title e.g. CAPITAL SHIFT",
         "value": "$40 TRILLION",
         "subtitle": "By 2028 Est."
       }},
@@ -90,6 +92,12 @@ Return a valid JSON object matching this exact schema:
 def generate_video_package(video_type: str = "short", specific_topic: str = None) -> dict:
     """Generates a complete script and production package using Gemini or offline fallback."""
     api_key = os.getenv("GEMINI_API_KEY", GEMINI_API_KEY)
+    
+    # If no specific topic given, dynamically fetch breaking real-time news
+    if not specific_topic:
+        breaking = get_latest_investigative_topic()
+        specific_topic = f"Breaking Investigation: {breaking['title']} (Context: {breaking.get('category', 'AI Economy')})"
+        print(f"[ScriptEngine] Live Trend Detected: {specific_topic}")
     
     if api_key:
         try:

@@ -43,11 +43,13 @@ def prepare_multi_scene_background(
         downloaded = fetch_stock_broll(query, raw_clip, orientation=orientation, clip_index=i)
 
         if downloaded and raw_clip.exists():
-            # Scale, crop to format, lock duration, and enforce YUV420P
+            # Scale, subtle Ken Burns dynamic zoom, crop to format, lock duration, and cinematic grading
+            num_frames = max(30, int(scene_duration * fps))
             scale_filter = (
-                f"scale={width}:{height}:force_original_aspect_ratio=increase,"
-                f"crop={width}:{height},setsar=1,"
-                f"eq=contrast=1.06:brightness=-0.02:saturation=1.1"  # Subtle cinematic color grading
+                f"scale=1920:1080:force_original_aspect_ratio=increase,"
+                f"zoompan=z='min(zoom+0.0012,1.12)':d={num_frames}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s={width}x{height},"
+                f"setsar=1,"
+                f"eq=contrast=1.06:brightness=-0.02:saturation=1.1"
             )
             cmd = [
                 "ffmpeg", "-y",

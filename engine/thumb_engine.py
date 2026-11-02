@@ -85,6 +85,28 @@ def create_high_ctr_thumbnail(
         color = THEME["accent_gold"] if i == 0 else "#FFFFFF"
         draw.text((70, line_y), line, font=font_main, fill=color)
 
+    # Draw Focal Cyber Aperture on the Right Side (High-tech visual anchor)
+    cx, cy = width - 260, height // 2
+    focal_img = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+    focal_draw = ImageDraw.Draw(focal_img)
+    
+    # Outer HUD Ring
+    focal_draw.ellipse([(cx - 160, cy - 160), (cx + 160, cy + 160)], outline=(102, 252, 241, 140), width=3)
+    focal_draw.ellipse([(cx - 130, cy - 130), (cx + 130, cy + 130)], outline=(255, 230, 0, 180), width=2)
+    focal_draw.ellipse([(cx - 70, cy - 70), (cx + 70, cy + 70)], fill=(0, 242, 254, 30), outline=(102, 252, 241, 230), width=4)
+    
+    # Crosshair HUD ticks
+    for angle_deg in [0, 45, 90, 135, 180, 225, 270, 315]:
+        import math
+        rad = math.radians(angle_deg)
+        x1 = cx + int(160 * math.cos(rad))
+        y1 = cy + int(160 * math.sin(rad))
+        x2 = cx + int(185 * math.cos(rad))
+        y2 = cy + int(185 * math.sin(rad))
+        focal_draw.line([(x1, y1), (x2, y2)], fill=(102, 252, 241, 200), width=3)
+    
+    img.paste(focal_img, (0, 0), focal_img)
+
     # Frame Border with Cyber Bracket Accents
     border_color = (102, 252, 241)
     b_len = 60
