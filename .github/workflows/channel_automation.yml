@@ -28,12 +28,12 @@ on:
       privacy_status:
         description: 'YouTube Privacy Status'
         required: true
-        default: 'private'
+        default: 'public'
         type: choice
         options:
-          - private
-          - unlisted
           - public
+          - unlisted
+          - private
 
 jobs:
   produce_and_publish:
@@ -70,19 +70,19 @@ jobs:
           YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
         run: |
           if [ "${{ github.event_name }}" = "schedule" ]; then
-            # Automated Cron Execution
+            # Automated Hands-Free Cron Execution (Public)
             if [ "${{ github.event.schedule }}" = "0 16 * * 0,2,4" ]; then
               VIDEO_TYPE="long"
             else
               VIDEO_TYPE="short"
             fi
-            PRIVACY="private"
+            PRIVACY="public"
             CMD="python pipeline.py --type $VIDEO_TYPE --live --privacy $PRIVACY"
           else
             # Manual Workflow Dispatch Execution
             VIDEO_TYPE="${{ github.event.inputs.video_type || 'short' }}"
             TOPIC="${{ github.event.inputs.topic || '' }}"
-            PRIVACY="${{ github.event.inputs.privacy_status || 'private' }}"
+            PRIVACY="${{ github.event.inputs.privacy_status || 'public' }}"
             CMD="python pipeline.py --type $VIDEO_TYPE --privacy $PRIVACY"
             if [ -n "$TOPIC" ]; then
               CMD="$CMD --topic \"$TOPIC\""

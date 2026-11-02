@@ -84,5 +84,5 @@ AUDIO_CONFIG = {
 
 # YouTube API Quota Safeguard
 MAX_DAILY_UPLOADS = 3
-DEFAULT_PRIVACY_STATUS = os.getenv("YT_PRIVACY_STATUS", "private")  # private -> unlisted -> public
+DEFAULT_PRIVACY_STATUS = os.getenv("YT_PRIVACY_STATUS", "public")  # default public for hands-free automation
 

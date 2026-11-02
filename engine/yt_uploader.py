@@ -128,3 +128,39 @@ def upload_video_to_youtube(
         "status": "published"
     }
 
+def set_video_privacy(video_id: str, privacy_status: str = "public") -> bool:
+    """Updates an existing video's privacy status (e.g. from private to public)."""
+    youtube = get_youtube_service()
+    if not youtube:
+        return False
+    try:
+        video_resp = youtube.videos().list(part="snippet,status", id=video_id).execute()
+        items = video_resp.get("items", [])
+        if not items:
+            print(f"Video {video_id} not found.")
+            return False
+        
+        video = items[0]
+        snippet = video["snippet"]
+        
+        youtube.videos().update(
+            part="snippet,status",
+            body={
+                "id": video_id,
+                "snippet": {
+                    "title": snippet["title"],
+                    "description": snippet.get("description", ""),
+                    "categoryId": snippet.get("categoryId", "28")
+                },
+                "status": {
+                    "privacyStatus": privacy_status,
+                    "selfDeclaredMadeForKids": False
+                }
+            }
+        ).execute()
+        print(f"Video {video_id} privacy updated to: {privacy_status}")
+        return True
+    except Exception as e:
+        print(f"Failed to update video privacy: {e}")
+        return False
+
